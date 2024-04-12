@@ -9,6 +9,7 @@ class CustomFormField extends StatelessWidget {
 static String? validateEmptytext(String? fieldNmae, String? value) {
     if (value == null || value.isEmpty) {
       return '$fieldNmae is reqired.';
+      
     }
     return null;
   }
