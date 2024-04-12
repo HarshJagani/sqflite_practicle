@@ -12,22 +12,59 @@ class FormScreen extends StatefulWidget {
 class _FormScreenState extends State<FormScreen> {
   List<Map<String, dynamic>> dataList = [];
   final nameController = TextEditingController();
-  final genderController = TextEditingController();
-  final hobbyController = TextEditingController();
   final ageController = TextEditingController();
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
   bool isDataChaned = false;
+  int? _value = 1;
+  String? dropDownValue = '0';
+  late DateTime userDob;
+  List<Map<String, String>> hobbyList = [
+    {'title': 'Select a hooby', 'value': '0'},
+    {'title': 'Sports', 'value': '1'},
+    {'title': 'Video Games', 'value': '2'},
+    {'title': 'Advanture', 'value': '3'},
+    {'title': 'Music', 'value': '4'},
+  ];
+
+  String calculateAge(DateTime birthDate) {
+    DateTime currentDate = DateTime.now();
+    int age = currentDate.year - birthDate.year;
+    if (currentDate.month < birthDate.month ||
+        (currentDate.month == birthDate.month &&
+            currentDate.day < birthDate.day)) {
+      age--;
+    }
+    return age.toString();
+  }
+
+  getHobbyTitle() {
+    String? userHobby;
+    for (int i = 0; i < hobbyList.length; i++) {
+      if (hobbyList[i]['value'] == dropDownValue) {
+        userHobby = hobbyList[i]['title'];
+      }
+    }
+    return userHobby;
+  }
+
+  getDropDownValue() {
+    for (int i = 0; i < hobbyList.length; i++) {
+      if (hobbyList[i]['value'] == dropDownValue) {
+        print(hobbyList[i]['value']);
+        return hobbyList[i]['value'];
+      }
+    }
+  }
+
   Future<void> addItem() async {
-    await SQLHelper.createItem(nameController.text, hobbyController.text,
-        genderController.text, ageController.text);
+    await SQLHelper.createItem(nameController.text, getHobbyTitle(),
+        _value == 1 ? 'Male' : 'Female', calculateAge(userDob));
     isDataChaned = true;
     refreshData();
   }
 
   void cleartextField() {
     nameController.clear();
-    genderController.clear();
-    hobbyController.clear();
     ageController.clear();
   }
 
@@ -35,14 +72,13 @@ class _FormScreenState extends State<FormScreen> {
     var temp = await SQLHelper.getItem(widget.itemId);
     debugPrint(temp.toString());
     nameController.text = temp[0]['name'];
-    genderController.text = temp[0]['gender'];
-    hobbyController.text = temp[0]['hobby'];
-    ageController.text = temp[0]['age'];
+    temp[0]['gender'] == 'Male' ? _value = 1 : _value = 2;
+    dropDownValue = getDropDownValue();
   }
 
-  void updateUserData(int id) async {
-    await SQLHelper.updateItem(id, nameController.text, hobbyController.text,
-        genderController.text, ageController.text);
+  Future<void> updateUserData(int id) async {
+    await SQLHelper.updateItem(id, nameController.text, getHobbyTitle(),
+        _value == 1 ? 'Male' : 'Female', calculateAge(userDob));
     refreshData();
     isDataChaned = true;
   }
@@ -69,7 +105,6 @@ class _FormScreenState extends State<FormScreen> {
       appBar: AppBar(
         leading: IconButton(
             onPressed: () {
-              //  print('Ne Id::::::::::$')
               Navigator.of(context).pop(true);
             },
             icon: const Icon(Icons.arrow_back)),
@@ -81,34 +116,104 @@ class _FormScreenState extends State<FormScreen> {
         child: Form(
           key: formKey,
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               CustomFormField(
                   fieldNmae: 'Name',
                   text: 'Enter Your Name',
                   controller: nameController),
               CustomFormField(
-                  fieldNmae: 'Gender',
-                  text: 'Enter Your Gender',
-                  controller: genderController),
-              CustomFormField(
-                  fieldNmae: 'Hobby',
-                  text: 'Enter Your Hobby',
-                  controller: hobbyController),
-              CustomFormField(
-                  fieldNmae: 'Age',
-                  text: 'Enter Your Age',
-                  controller: ageController),
+                controller: ageController,
+                fieldNmae: 'DOB',
+                prefixIcon: const Icon(Icons.calendar_month),
+                enabled: true,
+                reanOnly: true,
+                text: 'Select dob',
+                ontap: () {
+                  showDatePicker(
+                          context: context,
+                          firstDate: DateTime(1990),
+                          lastDate: DateTime.now())
+                      .then((value) => setState(() {
+                            userDob = value!;
+                            ageController.text =
+                                '${value.day}/${value.month}/${value.year}';
+                          }));
+                },
+              ),
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 18),
+                width: double.infinity,
+                height: 65,
+                decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15),
+                    border: Border.all(
+                      color: Colors.grey,
+                      width: 1.5,
+                    )),
+                child: DropdownButton<String>(
+                    padding: const EdgeInsets.all(15),
+                    borderRadius: BorderRadius.circular(10),
+                    icon: const Icon(Icons.arrow_drop_down),
+                    value: dropDownValue,
+                    items: [
+                      ...hobbyList.map<DropdownMenuItem<String>>((data) {
+                        return DropdownMenuItem<String>(
+                          value: data['value'],
+                          child: Text(data['title']!),
+                        );
+                      })
+                    ],
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        dropDownValue = newValue!;
+                      });
+                    }),
+              ),
+              Container(
+                  alignment: Alignment.centerLeft,
+                  margin: const EdgeInsets.only(left: 25, top: 10),
+                  child: Text('Gender',
+                      style: Theme.of(context).textTheme.bodyLarge)),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Radio(
+                      value: 1,
+                      groupValue: _value,
+                      onChanged: (value) {
+                        setState(() {
+                          _value = value;
+                        });
+                      },
+                    ),
+                    const Text('Male'),
+                    Radio(
+                      value: 2,
+                      groupValue: _value,
+                      onChanged: (value) {
+                        setState(() {
+                          _value = value;
+                        });
+                      },
+                    ),
+                    const Text('Female'),
+                  ],
+                ),
+              ),
               ElevatedButton(
                   onPressed: () async {
-                    //isDataChaned = true;
                     if (formKey.currentState!.validate()) {
                       if (widget.itemId >= 0) {
-                        updateUserData(widget.itemId);
+                        await updateUserData(widget.itemId);
                       } else {
                         await addItem();
                       }
                       cleartextField();
                     }
+                   
                   },
                   child:
                       Text(widget.itemId >= 0 ? 'Update User' : 'Create User'))
