@@ -34,7 +34,8 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   List<Map<String, dynamic>> _dataListFuture = [];
-  //bool _ascendingOrder = true;
+  bool _ascendingOrder = true;
+
   @override
   void initState() {
     super.initState();
@@ -49,8 +50,14 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void toggleSortOrder() {
     setState(() {
-      _dataListFuture
-          .sort((a, b) => int.parse(a['age']).compareTo(int.parse(b['age'])));
+      _ascendingOrder = !_ascendingOrder;
+      List<Map<String, dynamic>> sortedList = List.from(_dataListFuture);
+      sortedList.sort((a, b) {
+        final int ageA = int.parse(a['age']);
+        final int ageB = int.parse(b['age']);
+        return _ascendingOrder ? ageA.compareTo(ageB) : ageB.compareTo(ageA);
+      });
+      _dataListFuture = sortedList;
     });
   }
 
@@ -58,14 +65,9 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          leading: RotatedBox(
-            quarterTurns: 1,
-            child: IconButton(
-                onPressed: () {
-                  toggleSortOrder();
-                },
-                icon: const Icon(Icons.compare_arrows, size: 30)),
-          ),
+          leading: TextButton(onPressed: (){
+            toggleSortOrder();
+          }, child: Text(_ascendingOrder ? 'Asc.' : 'Dsc.',style: Theme.of(context).textTheme.bodyLarge,)),
           actions: [
             IconButton(
               onPressed: () {
@@ -118,9 +120,17 @@ class _MyHomePageState extends State<MyHomePage> {
                             )),
                         IconButton(
                             onPressed: () {
-                              Navigator.of(context).push(MaterialPageRoute(
-                                  builder: (context) => FormScreen(
-                                      itemId: _dataListFuture[index]['id'])));
+                              Navigator.of(context)
+                                  .push(MaterialPageRoute(
+                                      builder: (context) => FormScreen(
+                                          itemId: _dataListFuture[index]
+                                              ['id'])))
+                                  .then((value) async {
+                                if (value) {
+                                  await setListData();
+                                  // setState(() {});
+                                }
+                              });
                             },
                             icon: const Icon(
                               Icons.edit,
