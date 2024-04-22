@@ -25,7 +25,8 @@ class _FormScreenState extends State<FormScreen> {
     {'title': 'Advanture', 'value': '3'},
     {'title': 'Music', 'value': '4'},
   ];
-
+ 
+ // Fuction to calcutale the age of the user from dob.
   String calculateAge(DateTime birthDate) {
     DateTime currentDate = DateTime.now();
     int age = currentDate.year - birthDate.year;
@@ -36,7 +37,8 @@ class _FormScreenState extends State<FormScreen> {
     }
     return age.toString();
   }
-
+ 
+ // Fuction to get specific hobby from the hobby list. 
   getHobbyTitle() {
     String? userHobby;
     for (int i = 0; i < hobbyList.length; i++) {
@@ -46,36 +48,39 @@ class _FormScreenState extends State<FormScreen> {
     }
     return userHobby;
   }
-
+ 
+ // Fuvction to get  the selected hobby from the dropdown.
   getDropDownValue() {
     for (int i = 0; i < hobbyList.length; i++) {
       if (hobbyList[i]['value'] == dropDownValue) {
-        print(hobbyList[i]['value']);
         return hobbyList[i]['value'];
       }
     }
   }
-
+ 
+ // Function to add new user data
   Future<void> addItem() async {
     await SQLHelper.createItem(nameController.text, getHobbyTitle(),
         _value == 1 ? 'Male' : 'Female', calculateAge(userDob));
     isDataChaned = true;
     refreshData();
   }
-
+ 
   void cleartextField() {
     nameController.clear();
     ageController.clear();
   }
-
+ //Function to populate the feilds while updating existing user data.
   void populateFeilds() async {
     var temp = await SQLHelper.getItem(widget.itemId);
     debugPrint(temp.toString());
     nameController.text = temp[0]['name'];
     temp[0]['gender'] == 'Male' ? _value = 1 : _value = 2;
     dropDownValue = getDropDownValue();
+    //ageController.text = userDob.toString()
   }
 
+// Function to update user data
   Future<void> updateUserData(int id) async {
     await SQLHelper.updateItem(id, nameController.text, getHobbyTitle(),
         _value == 1 ? 'Male' : 'Female', calculateAge(userDob));
@@ -167,6 +172,7 @@ class _FormScreenState extends State<FormScreen> {
                     onChanged: (String? newValue) {
                       setState(() {
                         dropDownValue = newValue!;
+                        
                       });
                     }),
               ),
